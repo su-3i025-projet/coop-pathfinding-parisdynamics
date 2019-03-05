@@ -15,15 +15,87 @@ import glo
 import random 
 import numpy as np
 import sys
-
+import math
 
 # ---- ---- ---- ---- ---- ----
 # ---- Misc                ----
 # ---- ---- ---- ---- ---- ----
 
 
+# ---- ---- ---- ---- ---- ----
+# ---- Magie             ----
+# ---- ---- ---- ---- ---- ----
+class PriorityQueue():
+    def __init__(self, world):
+        self.goal, self.wall = world
+        self.frontier = []
+
+    def put(self, position, cost):
+        self.frontier.append((position, cost))
+
+    def empty(self):
+        return len(self.frontier) == 0
+
+    def get(self):
+        result = self.frontier[0]
+        for t in self.frontier:
+            if(t[1] != 0 and t[1] < result[1]):
+                result = t
+        pos, cos = result
+        self.frontier.remove(result)
+        return pos, cos
+
+    def clear(self):
+        self.frontier.clear()
 
 
+def heuristic(a, b):
+    xa, ya = a
+    xb, yb = b
+    return abs(xa-xb) + abs(ya-yb)
+
+def path(start, came_from):
+    final = []
+    if(start not in came_from):
+        return final
+    current = start
+    while(current != None):
+        final.append(current)
+        current = came_from[current]
+    return final
+
+class Graph():
+    def __init__(self, world):
+        self.wall, self.goal= world
+
+    def bas(self, position):
+        x, y = position
+        return (x, y-1)
+
+    def droite(self, position):
+        x, y = position
+        return (x+1, y)
+
+    def haut(self, position):
+        x, y = position
+        return (x, y+1)
+
+    def gauche(self, position):
+        x, y = position
+        return (x-1, y)
+
+    def neighbors(self, position):
+        final = []
+        test = [self.haut(position), self.gauche(position), self.droite(position), self.bas(position)]
+        for p in test:
+            if(p not in self.wall and p[0]>=0 and p[0]<=20 and p[1]>=0 and p[1]<=20):
+                final.append(p)
+        return final
+
+    def cost(self, currentP, nextP):
+        xa, ya = currentP
+        xb, yb = nextP
+        return math.sqrt((xb-xa)**2 + (yb-ya)**2)
 # ---- ---- ---- ---- ---- ----
 # ---- Main                ----
 # ---- ---- ---- ---- ---- ----
@@ -74,11 +146,57 @@ def main():
     #-------------------------------
     # Building the best path with A*
     #-------------------------------
-    
+    start = initStates[0]
+    goal = goalStates[0]
+    graph = Graph((wallStates, goalStates))
+    chemin = []
+    frontier = PriorityQueue((wallStates, goalStates))
+    frontier.put(start, 0)
+    came_from = {}
+    cost_so_far = {}
+    came_from[start] = None
+    cost_so_far[start] = 0
+    i=0
+    y = -1
 
-    
-    
-        
+    while (not frontier.empty()) and i<iterations:
+        print("\n\n**** TOUR"+str(i)+" ****")
+        print("came from: "+str(came_from))
+        print("cost so far: "+str(cost_so_far))
+        print("frontier: "+str(frontier.frontier))
+
+        position, cout = frontier.get()
+
+        if(position == goal):
+            frontier.clear()
+            break
+
+        for nextP in graph.neighbors(position):
+            new_cost = cost_so_far[position] + graph.cost(position, nextP)
+            if nextP not in cost_so_far or new_cost < cost_so_far[nextP]:
+                cost_so_far[nextP] = new_cost
+                priority = new_cost + heuristic(goal, nextP)
+                frontier.put(nextP, priority)
+                came_from[nextP] = position
+                #player.set_rowcol(nextP[0],nextP[1])
+                #print ("pos 1:",nextP[0],nextP[1])
+                #game.mainiteration()
+        i += 1
+
+    chemin = path(goal, came_from)
+
+    for a in range(len(chemin)):
+        nextP = chemin[y]
+        player.set_rowcol(nextP[0],nextP[1])
+        print ("pos 1:",nextP[0],nextP[1])
+        game.mainiteration()
+
+        if (nextP[0],nextP[1])==goal:
+            o = game.player.ramasse(game.layers)
+            game.mainiteration()
+            print ("Objet trouvé!", o)
+            pygame.quit()
+        y -= 1
     #-------------------------------
     # Moving along the path
     #-------------------------------
@@ -86,6 +204,7 @@ def main():
     # bon ici on fait juste un random walker pour exemple...
     
 
+"""
     row,col = initStates[0]
     #row2,col2 = (5,5)
 
@@ -104,7 +223,7 @@ def main():
             row=next_row
 
             
-        
+       
             
         # si on a  trouvé l'objet on le ramasse
         if (row,col)==goalStates[0]:
@@ -118,7 +237,7 @@ def main():
         '''
 
     pygame.quit()
-    
+"""
         
     
    
