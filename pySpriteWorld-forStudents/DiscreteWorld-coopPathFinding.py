@@ -21,8 +21,7 @@ import math
 # ---- Magie               ----
 # ---- ---- ---- ---- ---- ----
 class PriorityQueue():
-    def __init__(self, world):
-        self.goal, self.wall = world
+    def __init__(self):
         self.frontier = []
 
     def put(self, position, cost):
@@ -85,7 +84,7 @@ class Jeu():
         self.goal = goal
         self.graph = Graph((wallStates, goalStates))
         self.chemin = []
-        self.frontier = PriorityQueue((wallStates, goalStates))
+        self.frontier = PriorityQueue()
         self.frontier.put(init, 0)
         self.came_from = {}
         self.cost_so_far = {}
@@ -255,6 +254,13 @@ def main():
                 o.set_rowcol(x,y)
                 goalStates.append((x,y)) # on ajoute ce nouveau goalState
                 game.layers['ramassable'].add(o)
+                jeu.goal = (x, y)
+                jeu.frontier.put(jeu.position, 0)
+                jeu.came_from = {}
+                jeu.cost_so_far = {}
+                jeu.came_from[jeu.position] = None
+                jeu.cost_so_far[jeu.position] = 0
+                jeu.play()
                 game.mainiteration()
 
                 break
