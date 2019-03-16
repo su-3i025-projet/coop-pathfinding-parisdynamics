@@ -12,13 +12,144 @@ from itertools import chain
 import pygame
 import glo
 
-import random 
+import random
 import numpy as np
 import sys
+import math
 
+# ---- ---- ---- ---- ---- ----
+# ---- Magie               ----
+# ---- ---- ---- ---- ---- ----
+class PriorityQueue():
+    def __init__(self, world):
+        self.goal, self.wall = world
+        self.frontier = []
 
+    def put(self, position, cost):
+        self.frontier.append((position, cost))
 
-    
+    def empty(self):
+        return len(self.frontier) == 0
+
+    def get(self):
+        result = self.frontier[0]
+        for t in self.frontier:
+            if(t[1] != 0 and t[1] < result[1]):
+                result = t
+        pos, cos = result
+        self.frontier.remove(result)
+        return pos, cos
+
+    def clear(self):
+        self.frontier.clear()
+
+class Graph():
+    def __init__(self, world):
+        self.wall, self.goal= world
+
+    def bas(self, position):
+        x, y = position
+        return (x, y-1)
+
+    def droite(self, position):
+        x, y = position
+        return (x+1, y)
+
+    def haut(self, position):
+        x, y = position
+        return (x, y+1)
+
+    def gauche(self, position):
+        x, y = position
+        return (x-1, y)
+
+    def neighbors(self, position):
+        final = []
+        test = [self.haut(position), self.gauche(position), self.droite(position), self.bas(position)]
+        for p in test:
+            if(p not in self.wall and p[0]>=0 and p[0]<=19 and p[1]>=0 and p[1]<=19):
+                final.append(p)
+        return final
+
+    def cost(self, currentP, nextP):
+        xa, ya = currentP
+        xb, yb = nextP
+        return math.sqrt((xb-xa)**2 + (yb-ya)**2)
+
+class Jeu():
+    def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
+        self.game = game
+        self.player = player
+        self.nom = nom
+        self.position = init
+        self.goal = goal
+        self.graph = Graph((wallStates, goalStates))
+        self.chemin = []
+        self.frontier = PriorityQueue((wallStates, goalStates))
+        self.frontier.put(init, 0)
+        self.came_from = {}
+        self.cost_so_far = {}
+        self.came_from[init] = None
+        self.cost_so_far[init] = 0
+        self.i=0
+
+    def play(self):
+        while (not self.frontier.empty()):
+            print("\n\n**** TOUR"+str(self.i)+" ****")
+            print("came from: "+str(self.came_from))
+            print("cost so far: "+str(self.cost_so_far))
+            print("frontier: "+str(self.frontier.frontier))
+
+            position, cout = self.frontier.get()
+
+            if(position == self.goal):
+                self.frontier.clear()
+                break
+
+            for nextP in self.graph.neighbors(position):
+                new_cost = self.cost_so_far[position] + self.graph.cost(position, nextP)
+                if nextP not in self.cost_so_far or new_cost < self.cost_so_far[nextP]:
+                    self.cost_so_far[nextP] = new_cost
+                    priority = new_cost + self.heuristic(self.goal, nextP)
+                    self.frontier.put(nextP, priority)
+                    self.came_from[nextP] = position
+            self.i += 1
+
+        result = self.path()
+        result.reverse()
+        self.chemin.append(result)
+
+    def heuristic(self,a, b):
+        xa, ya = a
+        xb, yb = b
+        return abs(xa-xb) + abs(ya-yb)
+
+    def path(self):
+        final = []
+        if(self.goal not in self.came_from):
+            return final
+        current = self.goal
+        while(current != None):
+            final.append(current)
+            current = self.came_from[current]
+        return final
+
+    def bouge(self):
+        print("chemin: "+str(self.chemin))
+        if(len(self.chemin) == 0):
+            print("joueur {0}: RIEN A CHERCHER".format(self.nom))
+            return
+        if(len(self.chemin[-1]) == 0):
+            print("joueur {0}: CHEMIN FINI".format(self.nom))
+            self.chemin.pop(-1)
+            return
+        row, col = self.chemin[-1][0]
+        self.player.set_rowcol(row, col)
+        self.position = (row, col)
+        self.chemin[-1].pop(0)
+        print("pos :", self.nom, self.position)
+        game.mainiteration()
+
 # ---- ---- ---- ---- ---- ----
 # ---- Main                ----
 # ---- ---- ---- ---- ---- ----
@@ -36,7 +167,7 @@ def init(_boardname=None):
     game.mainiteration()
     game.mask.allow_overlaping_players = True
     #player = game.player
-    
+
 def main():
 
     #for arg in sys.argv:
@@ -47,81 +178,74 @@ def main():
     print (iterations)
 
     init()
-    
-    
-    
 
-    
+
+
+
+
     #-------------------------------
     # Initialisation
     #-------------------------------
-       
+
     players = [o for o in game.layers['joueur']]
     nbPlayers = len(players)
     score = [0]*nbPlayers
-    
-    
+
+
     # on localise tous les états initiaux (loc du joueur)
     initStates = [o.get_rowcol() for o in game.layers['joueur']]
     print ("Init states:", initStates)
-    
-    
+
+
     # on localise tous les objets ramassables
     goalStates = [o.get_rowcol() for o in game.layers['ramassable']]
     print ("Goal states:", goalStates)
-        
+
     # on localise tous les murs
     wallStates = [w.get_rowcol() for w in game.layers['obstacle']]
     #print ("Wall states:", wallStates)
-    
+
     #-------------------------------
-    # Placement aleatoire des fioles 
+    # Placement aleatoire des fioles
     #-------------------------------
-    
-    
+
+
     # on donne a chaque joueur une fiole a ramasser
     # en essayant de faire correspondre les couleurs pour que ce soit plus simple à suivre
-    
-    
+
+
     #-------------------------------
-    # Boucle principale de déplacements 
+    # Boucle principale de déplacements
     #-------------------------------
-    
-        
+
+
     # bon ici on fait juste plusieurs random walker pour exemple...
-    
+
     posPlayers = initStates
 
-    for i in range(iterations):
-        
-        for j in range(nbPlayers): # on fait bouger chaque joueur séquentiellement
-            row,col = posPlayers[j]
+    jeux = []
+    chemins = []
+    z=0
+    for i in range(len(goalStates)):
+        jeux.append(Jeu(game, players[z], z, posPlayers[z], goalStates[i], wallStates, goalStates))
+        jeux[i].play()
+        if(z >= nbPlayers):
+            z=0
+        else:
+            z+=1
 
-            x_inc,y_inc = random.choice([(0,1),(0,-1),(1,0),(-1,0)])
-            next_row = row+x_inc
-            next_col = col+y_inc
-            # and ((next_row,next_col) not in posPlayers)
-            if ((next_row,next_col) not in wallStates) and next_row>=0 and next_row<=19 and next_col>=0 and next_col<=19:
-                players[j].set_rowcol(next_row,next_col)
-                print ("pos :", j, next_row,next_col)
-                game.mainiteration()
-    
-                col=next_col
-                row=next_row
-                posPlayers[j]=(row,col)
-            
-      
-        
-            
+    for i in range(iterations):
+        for jeu in jeux:
+            jeu.bouge()
             # si on a  trouvé un objet on le ramasse
-            if (row,col) in goalStates:
-                o = players[j].ramasse(game.layers)
+            if(jeu.position in goalStates):
+                o = jeu.player.ramasse(game.layers)
                 game.mainiteration()
-                print ("Objet trouvé par le joueur ", j)
-                goalStates.remove((row,col)) # on enlève ce goalState de la liste
-                score[j]+=1
-                
-        
+                print ("Objet trouvé par le joueur ", jeu.nom)
+                goalStates.remove(jeu.position) # on enlève ce goalState de la liste
+                score[jeu.nom]+=1
+
+
                 # et on remet un même objet à un autre endroit
                 x = random.randint(1,19)
                 y = random.randint(1,19)
@@ -131,20 +255,12 @@ def main():
                 o.set_rowcol(x,y)
                 goalStates.append((x,y)) # on ajoute ce nouveau goalState
                 game.layers['ramassable'].add(o)
-                game.mainiteration()                
-                
+                game.mainiteration()
+
                 break
-            
-    
+
     print ("scores:", score)
     pygame.quit()
-    
-        
-    
-   
 
 if __name__ == '__main__':
     main()
-    
-
-
