@@ -122,6 +122,13 @@ class Jeu():
         result.reverse()
         self.chemin.append(result)
 
+    def reset(self):
+        self.frontier.put(self.position, 0)
+        self.came_from = {}
+        self.cost_so_far = {}
+        self.came_from[self.position] = None
+        self.cost_so_far[self.position] = 0
+
     def heuristic(self,a, b):
         xa, ya = a
         xb, yb = b
@@ -137,14 +144,9 @@ class Jeu():
             current = self.came_from[current]
         return final
 
-    def bouge(self):
+    def move(self):
         Jeu.positions[self.nom] = (-1,-1)
         print("chemin: "+str(self.chemin))
-        if(self.pause > 0):
-            print("joueur {0}: passe mon tour".format(self.nom))
-            Jeu.positions[self.nom] = self.position
-            self.pause -= 1
-            return
         if(len(self.chemin) == 0):
             print("joueur {0}: RIEN A CHERCHER".format(self.nom))
             Jeu.positions[self.nom] = self.position
@@ -158,6 +160,14 @@ class Jeu():
             print("joueur {0}: conflit avec un autre joueur".format(self.nom))
             Jeu.positions[self.nom] = self.position
             self.pause += 1
+            return
+        if(self.pause > 0):
+            if(self.pause > 1):
+                pass
+            else:
+                print("joueur {0}: passe mon tour".format(self.nom))
+                Jeu.positions[self.nom] = self.position
+                self.pause -= 1
             return
         row, col = self.chemin[-1][0]
         self.player.set_rowcol(row, col)
@@ -253,7 +263,7 @@ def main():
 
     for i in range(iterations):
         for jeu in jeux:
-            jeu.bouge()
+            jeu.move()
             # si on a  trouvé un objet on le ramasse
             if(jeu.position in goalStates):
                 o = jeu.player.ramasse(game.layers)
@@ -273,11 +283,7 @@ def main():
                 goalStates.append((x,y)) # on ajoute ce nouveau goalState
                 game.layers['ramassable'].add(o)
                 jeu.goal = (x, y)
-                jeu.frontier.put(jeu.position, 0)
-                jeu.came_from = {}
-                jeu.cost_so_far = {}
-                jeu.came_from[jeu.position] = None
-                jeu.cost_so_far[jeu.position] = 0
+                jeu.reset()
                 jeu.play()
                 game.mainiteration()
 
