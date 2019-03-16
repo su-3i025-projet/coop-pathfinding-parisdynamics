@@ -76,6 +76,8 @@ class Graph():
         return math.sqrt((xb-xa)**2 + (yb-ya)**2)
 
 class Jeu():
+    positions = {}
+
     def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
         self.game = game
         self.player = player
@@ -91,6 +93,8 @@ class Jeu():
         self.came_from[init] = None
         self.cost_so_far[init] = 0
         self.i=0
+        self.pause=0
+        Jeu.positions[self.nom] = init
 
     def play(self):
         while (not self.frontier.empty()):
@@ -134,18 +138,32 @@ class Jeu():
         return final
 
     def bouge(self):
+        Jeu.positions[self.nom] = (-1,-1)
         print("chemin: "+str(self.chemin))
+        if(self.pause > 0):
+            print("joueur {0}: passe mon tour".format(self.nom))
+            Jeu.positions[self.nom] = self.position
+            self.pause -= 1
+            return
         if(len(self.chemin) == 0):
             print("joueur {0}: RIEN A CHERCHER".format(self.nom))
+            Jeu.positions[self.nom] = self.position
             return
         if(len(self.chemin[-1]) == 0):
             print("joueur {0}: CHEMIN FINI".format(self.nom))
+            Jeu.positions[self.nom] = self.position
             self.chemin.pop(-1)
+            return
+        if(self.chemin[-1][0] in Jeu.positions.values()):
+            print("joueur {0}: conflit avec un autre joueur".format(self.nom))
+            Jeu.positions[self.nom] = self.position
+            self.pause += 1
             return
         row, col = self.chemin[-1][0]
         self.player.set_rowcol(row, col)
         self.position = (row, col)
         self.chemin[-1].pop(0)
+        Jeu.positions[self.nom] = self.position
         print("pos :", self.nom, self.position)
         game.mainiteration()
 
@@ -158,7 +176,7 @@ game = Game()
 def init(_boardname=None):
     global player,game
     # pathfindingWorld_MultiPlayer4
-    name = _boardname if _boardname is not None else 'pathfindingWorld_MultiPlayer1'
+    name = _boardname if _boardname is not None else 'pathfindingWorld_MultiPlayer3'
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
