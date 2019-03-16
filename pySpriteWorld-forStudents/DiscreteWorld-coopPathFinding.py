@@ -77,6 +77,9 @@ class Graph():
 
 class Jeu():
     positions = {}
+    caches = {}
+    caches["l1"] = {}
+    caches["l2"] = []
 
     def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
         self.game = game
@@ -95,6 +98,7 @@ class Jeu():
         self.i=0
         self.pause=0
         Jeu.positions[self.nom] = init
+        Jeu.caches["l1"][self.nom] = []
 
     def play(self):
         while (not self.frontier.empty()):
@@ -160,15 +164,21 @@ class Jeu():
             print("joueur {0}: conflit avec un autre joueur".format(self.nom))
             Jeu.positions[self.nom] = self.position
             self.pause += 1
-            return
         if(self.pause > 0):
             if(self.pause > 1):
-                pass
+                row, col = Jeu.caches["l1"][self.nom][-1]
+                self.player.set_rowcol(row, col)
+                self.position = (row, col)
+                Jeu.caches["l1"][self.nom].pop(-1)
+                Jeu.positions[self.nom] = self.position
+                print("pos :", self.nom, self.position)
+                game.mainiteration()
             else:
                 print("joueur {0}: passe mon tour".format(self.nom))
                 Jeu.positions[self.nom] = self.position
                 self.pause -= 1
             return
+        Jeu.caches["l1"][self.nom].append(self.position)
         row, col = self.chemin[-1][0]
         self.player.set_rowcol(row, col)
         self.position = (row, col)
@@ -198,7 +208,7 @@ def init(_boardname=None):
 def main():
 
     #for arg in sys.argv:
-    iterations = 50 # default
+    iterations = 500 # default
     if len(sys.argv) == 2:
         iterations = int(sys.argv[1])
     print ("Iterations: ")
@@ -282,6 +292,8 @@ def main():
                 o.set_rowcol(x,y)
                 goalStates.append((x,y)) # on ajoute ce nouveau goalState
                 game.layers['ramassable'].add(o)
+                Jeu.caches["l2"].append(Jeu.caches["l1"][jeu.nom])
+                Jeu.caches["l1"][jeu.nom] = []
                 jeu.goal = (x, y)
                 jeu.reset()
                 jeu.play()
