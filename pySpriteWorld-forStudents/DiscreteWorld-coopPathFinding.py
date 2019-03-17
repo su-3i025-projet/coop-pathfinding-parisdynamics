@@ -76,6 +76,7 @@ class Graph():
         return math.sqrt((xb-xa)**2 + (yb-ya)**2)
 
 class Jeu():
+    cpt = 0
     positions = {}
     caches = {}
     caches["l1"] = {}
@@ -95,18 +96,15 @@ class Jeu():
         self.cost_so_far = {}
         self.came_from[init] = None
         self.cost_so_far[init] = 0
-        self.i=0
         self.pause=0
+        self.ID = Jeu.cpt
+        Jeu.cpt += 1
         Jeu.positions[self.nom] = init
         Jeu.caches["l1"][self.nom] = []
 
     def play(self):
+        i = 1
         while (not self.frontier.empty()):
-            print("\n\n**** TOUR"+str(self.i)+" ****")
-            print("came from: "+str(self.came_from))
-            print("cost so far: "+str(self.cost_so_far))
-            print("frontier: "+str(self.frontier.frontier))
-
             position, cout = self.frontier.get()
 
             if(position == self.goal):
@@ -120,7 +118,7 @@ class Jeu():
                     priority = new_cost + self.heuristic(self.goal, nextP)
                     self.frontier.put(nextP, priority)
                     self.came_from[nextP] = position
-            self.i += 1
+            i += 1
 
         result = self.path()
         result.reverse()
@@ -150,41 +148,48 @@ class Jeu():
 
     def move(self):
         Jeu.positions[self.nom] = (-1,-1)
-        print("chemin: "+str(self.chemin))
+        # print("chemin: "+str(self.chemin))
         if(len(self.chemin) == 0):
-            print("joueur {0}: RIEN A CHERCHER".format(self.nom))
+            # print("joueur {0}: RIEN A CHERCHER".format(self.nom))
             Jeu.positions[self.nom] = self.position
             return
         if(len(self.chemin[-1]) == 0):
-            print("joueur {0}: CHEMIN FINI".format(self.nom))
+            # print("joueur {0}: CHEMIN FINI".format(self.nom))
             Jeu.positions[self.nom] = self.position
             self.chemin.pop(-1)
             return
-        if(self.chemin[-1][0] in Jeu.positions.values()):
+        if(self.chemin[-1][0] in Jeu.positions.values() and self.pause <= 0):
             print("joueur {0}: conflit avec un autre joueur".format(self.nom))
             Jeu.positions[self.nom] = self.position
             self.pause += 1
-        if(self.pause > 0):
-            if(self.pause > 1):
+            return
+        elif(self.pause > 1):
+            if(len(Jeu.caches["l1"][self.nom]) > 0):
                 row, col = Jeu.caches["l1"][self.nom][-1]
-                self.player.set_rowcol(row, col)
-                self.position = (row, col)
-                Jeu.caches["l1"][self.nom].pop(-1)
-                Jeu.positions[self.nom] = self.position
-                print("pos :", self.nom, self.position)
-                game.mainiteration()
             else:
-                print("joueur {0}: passe mon tour".format(self.nom))
-                Jeu.positions[self.nom] = self.position
+                return
+            if((row, col) in Jeu.positions.values()):
+                return
+            self.chemin[-1].insert(0, (self.position))
+            self.chemin[-1].insert(0, (-1, -1))
+            Jeu.caches["l1"][self.nom].pop(-1)
+            self.pause -= 1
+        elif(self.pause > 0):
+            print("joueur {0}: passe mon tour".format(self.nom))
+            Jeu.positions[self.nom] = self.position
+            if(self.chemin[-1][0] in Jeu.positions.values()):
+                self.pause += 1
+            else:
                 self.pause -= 1
             return
-        Jeu.caches["l1"][self.nom].append(self.position)
-        row, col = self.chemin[-1][0]
+        else:
+            Jeu.caches["l1"][self.nom].append(self.position)
+            row, col = self.chemin[-1][0]
         self.player.set_rowcol(row, col)
         self.position = (row, col)
         self.chemin[-1].pop(0)
         Jeu.positions[self.nom] = self.position
-        print("pos :", self.nom, self.position)
+        # print("pos :", self.nom, self.position)
         game.mainiteration()
 
 # ---- ---- ---- ---- ---- ----
@@ -264,7 +269,7 @@ def main():
     chemins = []
     z=0
     for i in range(len(goalStates)):
-        jeux.append(Jeu(game, players[z], z, posPlayers[z], goalStates[i], wallStates, goalStates))
+        jeux.append(Jeu(game, players[z], "j"+str(z), posPlayers[z], goalStates[i], wallStates, goalStates))
         jeux[i].play()
         if(z >= nbPlayers):
             z=0
@@ -278,9 +283,9 @@ def main():
             if(jeu.position in goalStates):
                 o = jeu.player.ramasse(game.layers)
                 game.mainiteration()
-                print ("Objet trouvé par le joueur ", jeu.nom)
+                # print ("Objet trouvé par le joueur ", jeu.nom)
                 goalStates.remove(jeu.position) # on enlève ce goalState de la liste
-                score[jeu.nom]+=1
+                score[jeu.ID]+=1
 
 
                 # et on remet un même objet à un autre endroit
