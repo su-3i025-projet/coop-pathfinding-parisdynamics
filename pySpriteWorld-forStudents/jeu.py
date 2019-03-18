@@ -1,5 +1,9 @@
 from priorityQueue import PriorityQueue
 from graph import Graph
+from strategie import Strategie
+from strategie import CacheStrategie
+from strategie import OppoStrategie
+from strategie import CoopStrategie
 
 class Jeu():
     cpt = 0
@@ -7,6 +11,8 @@ class Jeu():
     caches = {}
     caches["l1"] = {}
     caches["l2"] = []
+    references = {}
+    strategie = CacheStrategie()
 
     def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
         self.game = game
@@ -27,6 +33,7 @@ class Jeu():
         Jeu.cpt += 1
         Jeu.positions[self.nom] = init
         Jeu.caches["l1"][self.nom] = []
+        Jeu.references[self.nom] = self
 
     def play(self):
         i = 1
@@ -49,6 +56,7 @@ class Jeu():
         result = self.path()
         result.reverse()
         self.chemin.append(result)
+        Jeu.strategie.apply()
 
     def reset(self):
         self.frontier.put(self.position, 0)
@@ -90,16 +98,9 @@ class Jeu():
             self.pause += 1
             return
         elif(self.pause > 1):
-            if(len(Jeu.caches["l1"][self.nom]) > 0):
-                row, col = Jeu.caches["l1"][self.nom][-1]
-            else:
-                return
-            if((row, col) in Jeu.positions.values()):
-                return
-            self.chemin[-1].insert(0, (self.position))
-            self.chemin[-1].insert(0, (-1, -1))
-            Jeu.caches["l1"][self.nom].pop(-1)
+            Jeu.strategie.reply(self)
             self.pause -= 1
+            row, col = self.chemin[-1][0]
         elif(self.pause > 0):
             print("joueur {0}: passe mon tour".format(self.nom))
             Jeu.positions[self.nom] = self.position
