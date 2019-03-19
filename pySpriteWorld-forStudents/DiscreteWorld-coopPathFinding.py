@@ -113,10 +113,7 @@ def main():
                 o.set_rowcol(x,y)
                 goalStates.append((x,y)) # on ajoute ce nouveau goalState
                 game.layers['ramassable'].add(o)
-                Jeu.caches["l2"].append(Jeu.caches["l1"][jeu.nom])
-                Jeu.caches["l1"][jeu.nom] = []
                 jeu.goal = (x, y)
-                jeu.graph.wall = list(set(jeu.graph.wall) - set(jeu.avoid))
                 jeu.reset()
                 jeu.play()
                 game.mainiteration()

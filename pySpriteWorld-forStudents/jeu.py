@@ -10,7 +10,7 @@ class Jeu():
     positions = {}
     caches = {}
     caches["l1"] = {}
-    caches["l2"] = []
+    caches["l2"] = {}
     references = {}
     strategie = OppoStrategie()
 
@@ -61,6 +61,7 @@ class Jeu():
         Jeu.strategie.apply(self)
 
     def reset(self):
+        #self.graph.wall = list(set(self.graph.wall) - set(self.avoid))
         self.avoid.clear()
         self.frontier.clear()
         self.frontier.put(self.position, 0)
@@ -68,6 +69,9 @@ class Jeu():
         self.cost_so_far = {}
         self.came_from[self.position] = None
         self.cost_so_far[self.position] = 0
+        self.pause = 0
+        Jeu.caches["l2"][self.nom] = self.caches["l1"][self.nom]
+        Jeu.caches["l1"][self.nom] = []
 
     def heuristic(self,a, b):
         xa, ya = a

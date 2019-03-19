@@ -33,10 +33,8 @@ class OppoStrategie(Strategie):
 
     def reply(self, Jeu):
         case = Jeu.chemin[-1][0]
-        print("refences:", Jeu.references)
         for currentJ in Jeu.references.values():
             if(len(currentJ.chemin[-1]) > 0):
-                print(currentJ.nom, currentJ.chemin[-1][0], case)
                 if(currentJ.chemin[-1][0] == case):
                     currentJ.avoid.append(case)
                     currentJ.graph.wall.append(case)
@@ -44,7 +42,6 @@ class OppoStrategie(Strategie):
                     currentJ.play()
                 if(not(currentJ is Jeu) and currentJ.position == case):
                     currentJ.freeze(3)
-        #exit(0)
 
 
 
