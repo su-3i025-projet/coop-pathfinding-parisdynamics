@@ -61,7 +61,7 @@ class Jeu():
         Jeu.strategie.apply(self)
 
     def reset(self):
-        #self.graph.wall = list(set(self.graph.wall) - set(self.avoid))
+        self.graph.wall = list(set(self.graph.wall) - set(self.avoid))
         self.avoid.clear()
         self.frontier.clear()
         self.frontier.put(self.position, 0)
@@ -115,7 +115,10 @@ class Jeu():
         elif(self.pause > 1):
             Jeu.strategie.reply(self)
             self.pause -= 1
-            row, col = self.chemin[-1][0]
+            if(len(self.chemin[-1]) > 0):
+                row, col = self.chemin[-1][0]
+            else:
+                row, col = self.position
         elif(self.pause > 0):
             print("joueur {0}: passe mon tour".format(self.nom))
             Jeu.positions[self.nom] = self.position
@@ -129,7 +132,8 @@ class Jeu():
             row, col = self.chemin[-1][0]
         self.player.set_rowcol(row, col)
         self.position = (row, col)
-        self.chemin[-1].pop(0)
+        if(len(self.chemin[-1]) > 0):
+            self.chemin[-1].pop(0)
         Jeu.positions[self.nom] = self.position
         # print("pos :", self.nom, self.position)
         self.game.mainiteration()

@@ -36,9 +36,9 @@ class OppoStrategie(Strategie):
         for currentJ in Jeu.references.values():
             if(len(currentJ.chemin[-1]) > 0):
                 if(currentJ.chemin[-1][0] == case):
+                    currentJ.reset()
                     currentJ.avoid.append(case)
                     currentJ.graph.wall.append(case)
-                    currentJ.reset()
                     currentJ.play()
                 if(not(currentJ is Jeu) and currentJ.position == case):
                     currentJ.freeze(3)
