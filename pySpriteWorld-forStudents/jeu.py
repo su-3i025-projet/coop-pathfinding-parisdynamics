@@ -12,7 +12,7 @@ class Jeu():
     caches["l1"] = {}
     caches["l2"] = []
     references = {}
-    strategie = CacheStrategie()
+    strategie = OppoStrategie()
 
     def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
         self.game = game
@@ -28,7 +28,9 @@ class Jeu():
         self.cost_so_far = {}
         self.came_from[init] = None
         self.cost_so_far[init] = 0
-        self.pause=0
+        self.pause = 0
+        self.priority = 0
+        self.avoid = []
         self.ID = Jeu.cpt
         Jeu.cpt += 1
         Jeu.positions[self.nom] = init
@@ -56,9 +58,11 @@ class Jeu():
         result = self.path()
         result.reverse()
         self.chemin.append(result)
-        Jeu.strategie.apply()
+        Jeu.strategie.apply(self)
 
     def reset(self):
+        self.avoid.clear()
+        self.frontier.clear()
         self.frontier.put(self.position, 0)
         self.came_from = {}
         self.cost_so_far = {}
@@ -80,7 +84,14 @@ class Jeu():
             current = self.came_from[current]
         return final
 
+    def freeze(self, n=1):
+        self.priority += n
+
     def move(self):
+        if(self.priority > 0):
+            print(self.nom, "FREEEEEEEEEEEEZE")
+            self.priority -= 1
+            return
         Jeu.positions[self.nom] = (-1,-1)
         # print("chemin: "+str(self.chemin))
         if(len(self.chemin) == 0):

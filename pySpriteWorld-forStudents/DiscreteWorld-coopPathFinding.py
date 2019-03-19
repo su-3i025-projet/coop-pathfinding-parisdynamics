@@ -96,7 +96,7 @@ def main():
         for jeu in jeux:
             jeu.move()
             # si on a  trouvé un objet on le ramasse
-            if(jeu.position in goalStates):
+            if(jeu.position == jeu.goal):
                 o = jeu.player.ramasse(game.layers)
                 game.mainiteration()
                 # print ("Objet trouvé par le joueur ", jeu.nom)
@@ -116,6 +116,7 @@ def main():
                 Jeu.caches["l2"].append(Jeu.caches["l1"][jeu.nom])
                 Jeu.caches["l1"][jeu.nom] = []
                 jeu.goal = (x, y)
+                jeu.graph.wall = list(set(jeu.graph.wall) - set(jeu.avoid))
                 jeu.reset()
                 jeu.play()
                 game.mainiteration()

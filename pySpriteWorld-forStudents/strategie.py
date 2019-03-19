@@ -12,7 +12,7 @@ class CacheStrategie(Strategie):
     def __init__(self):
         super().__init__("Cache")
 
-    def apply(self):
+    def apply(self, Jeu):
         pass
 
     def reply(self, Jeu):
@@ -32,7 +32,21 @@ class OppoStrategie(Strategie):
         pass
 
     def reply(self, Jeu):
-        pass
+        case = Jeu.chemin[-1][0]
+        print("refences:", Jeu.references)
+        for currentJ in Jeu.references.values():
+            if(len(currentJ.chemin[-1]) > 0):
+                print(currentJ.nom, currentJ.chemin[-1][0], case)
+                if(currentJ.chemin[-1][0] == case):
+                    currentJ.avoid.append(case)
+                    currentJ.graph.wall.append(case)
+                    currentJ.reset()
+                    currentJ.play()
+                if(not(currentJ is Jeu) and currentJ.position == case):
+                    currentJ.freeze(3)
+        #exit(0)
+
+
 
 class CoopStrategie(Strategie):
     def __init__(self):
