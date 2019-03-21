@@ -1,6 +1,7 @@
 from priorityQueue import PriorityQueue
 from graph import Graph
 from strategie import Strategie
+from strategie import NullStrategie
 from strategie import CacheStrategie
 from strategie import OppoStrategie
 from strategie import CoopStrategie
@@ -12,7 +13,7 @@ class Jeu():
     caches["l1"] = {}
     caches["l2"] = {}
     references = {}
-    strategie = OppoStrategie()
+    strategie = CoopStrategie()
 
     def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
         self.game = game
@@ -113,20 +114,19 @@ class Jeu():
             self.pause += 1
             return
         elif(self.pause > 1):
+            Jeu.positions[self.nom] = self.position
             Jeu.strategie.reply(self)
             self.pause -= 1
-            if(len(self.chemin[-1]) > 0):
-                row, col = self.chemin[-1][0]
-            else:
-                row, col = self.position
-        elif(self.pause > 0):
-            print("joueur {0}: passe mon tour".format(self.nom))
-            Jeu.positions[self.nom] = self.position
-            if(self.chemin[-1][0] in Jeu.positions.values()):
-                self.pause += 1
-            else:
-                self.pause -= 1
             return
+        elif(self.pause > 0):
+            if(self.chemin[-1][0] in Jeu.positions.values()):
+                Jeu.positions[self.nom] = self.position
+                print("joueur {0}: passe mon tour".format(self.nom))
+                self.pause += 1
+                return
+            print(self.nom, "reprend mon chemin")
+            self.pause = 0
+            row, col = self.chemin[-1][0]
         else:
             Jeu.caches["l1"][self.nom].append(self.position)
             row, col = self.chemin[-1][0]
