@@ -27,11 +27,11 @@ class CacheStrategie(Strategie):
 
     def reply(self, Jeu):
         for currentJ in Jeu.references.values():
-            if(len(currentJ.chemin) > 0 and len(currentJ.chemin[-1]) > 0):
-                if(currentJ.chemin[-1][0] is Jeu.chemin[-1][0]):
-                    currentJ.chemin[-1].insert(0, currentJ.position)
+            if(len(currentJ.chemin) > 0 and len(currentJ.chemin) > 0):
+                if(currentJ.chemin[0] is Jeu.chemin[0]):
+                    currentJ.chemin.insert(0, currentJ.position)
                     if(len(Jeu.caches["l1"][currentJ.nom]) > 0):
-                        currentJ.chemin[-1].insert(0, Jeu.caches["l1"][currentJ.nom][-1])
+                        currentJ.chemin.insert(0, Jeu.caches["l1"][currentJ.nom][-1])
                         Jeu.caches["l1"][currentJ.nom].pop(-1)
 
 class OppoStrategie(Strategie):
@@ -42,10 +42,10 @@ class OppoStrategie(Strategie):
         pass
 
     def reply(self, Jeu):
-        case = Jeu.chemin[-1][0]
+        case = Jeu.chemin[0]
         for currentJ in Jeu.references.values():
-            if(len(currentJ.chemin[-1]) > 0):
-                if(currentJ.chemin[-1][0] == case):
+            if(len(currentJ.chemin) > 0):
+                if(currentJ.chemin[0] == case):
                     currentJ.reset()
                     currentJ.avoid.append(case)
                     currentJ.graph.wall.append(case)
@@ -62,21 +62,63 @@ class CoopStrategie(Strategie):
 
     def apply(self, Jeu):
         self.garbage()
-        for case in Jeu.chemin[-1]:
+        for case in Jeu.chemin:
             if case in self.reservation.keys():
                 print(Jeu.nom, "MEGA FREEZE par rapport au chemin de", self.reservation[case][0])
-                Jeu.freeze(len(self.reservation[case][1])+Jeu.references[self.reservation[case][0]].priority)
+                Jeu.freeze(len(self.reservation[case][1])+Jeu.references[self.reservation[case][0]].priority+1)
                 return
-        for case in Jeu.chemin[-1]:
-            self.reservation[case] = (Jeu.nom, Jeu.chemin[-1])
+            if(Jeu.isObstacle(case)):
+                for k, v in Jeu.references.items():
+                    if(Jeu.positions[k] == case):
+                        Jeu.freeze(v.priority+1)
+                        return
+        for case in Jeu.chemin:
+            self.reservation[case] = (Jeu.nom, Jeu.chemin)
 
     def reply(self, Jeu):
-        self.apply(Jeu)
+        pass
 
     def garbage(self):
         collector = []
         for k, v in self.reservation.items():
             if(len(v[1]) <= 0):
+                collector.append(k)
+        for k in collector:
+            del self.reservation[k]
+
+class AdvancedCoopStrategie(Strategie):
+    def __init__(self):
+        super().__init__("Advanced Cooperation")
+        self.reservation = {}
+
+    def apply(self, Jeu):
+        t = Jeu.clock
+        self.garbage(t)
+        print("\n\n\nresa", self.reservation)
+        for i in range(len(Jeu.chemin)):
+            if(t+i in self.reservation.keys()):
+                if(Jeu.chemin[i] in self.reservation[t+i]):
+                    if(i == 0):
+                        print("conflit debut")
+                        Jeu.chemin.insert(0, Jeu.position)
+                    else:
+                        print("conflit a t =", t+i)
+                        Jeu.chemin.insert(i, Jeu.chemin[i-1])
+                    self.reservation[t+i].append(Jeu.chemin[i])
+                    t += 1
+                else:
+                    self.reservation[t+i].append(Jeu.chemin[i])
+            else:
+                self.reservation[t+i] = [Jeu.chemin[i]]
+        print("resa", self.reservation)
+
+    def reply(self, Jeu):
+        exit(0)
+
+    def garbage(self, t):
+        collector = []
+        for k in self.reservation.keys():
+            if(k < t):
                 collector.append(k)
         for k in collector:
             del self.reservation[k]

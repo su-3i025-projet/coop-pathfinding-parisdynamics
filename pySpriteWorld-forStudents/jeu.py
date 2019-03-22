@@ -5,6 +5,7 @@ from strategie import NullStrategie
 from strategie import CacheStrategie
 from strategie import OppoStrategie
 from strategie import CoopStrategie
+from strategie import AdvancedCoopStrategie
 
 class Jeu():
     cpt = 0
@@ -13,7 +14,8 @@ class Jeu():
     caches["l1"] = {}
     caches["l2"] = {}
     references = {}
-    strategie = CoopStrategie()
+    clock = 0
+    strategie = AdvancedCoopStrategie()
 
     def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
         self.game = game
@@ -58,11 +60,12 @@ class Jeu():
 
         result = self.path()
         result.reverse()
-        self.chemin.append(result)
+        self.chemin = result
         Jeu.strategie.apply(self)
 
     def reset(self):
         self.graph.wall = list(set(self.graph.wall) - set(self.avoid))
+        self.chemin = []
         self.avoid.clear()
         self.frontier.clear()
         self.frontier.put(self.position, 0)
@@ -92,48 +95,48 @@ class Jeu():
     def freeze(self, n=1):
         self.priority += n
 
+    def isObstacle(self, case):
+        Jeu.positions[self.nom] = (-1,-1)
+        temoin = case in Jeu.positions.values()
+        Jeu.positions[self.nom] = self.position
+        return temoin
+
     def move(self):
+        if(Jeu.references[list(Jeu.references.keys())[0]] is self):
+            Jeu.clock += 1
+            print("clock", Jeu.clock)
         if(self.priority > 0):
             print(self.nom, "FREEEEEEEEEEEEZE")
             self.priority -= 1
             return
-        Jeu.positions[self.nom] = (-1,-1)
         # print("chemin: "+str(self.chemin))
         if(len(self.chemin) == 0):
             # print("joueur {0}: RIEN A CHERCHER".format(self.nom))
             Jeu.positions[self.nom] = self.position
             return
-        if(len(self.chemin[-1]) == 0):
-            # print("joueur {0}: CHEMIN FINI".format(self.nom))
-            Jeu.positions[self.nom] = self.position
-            self.chemin.pop(-1)
-            return
-        if(self.chemin[-1][0] in Jeu.positions.values() and self.pause <= 0):
+        if(self.isObstacle(self.chemin[0]) and self.pause <= 0):
             print("joueur {0}: conflit avec un autre joueur".format(self.nom))
-            Jeu.positions[self.nom] = self.position
             self.pause += 1
             return
         elif(self.pause > 1):
-            Jeu.positions[self.nom] = self.position
             Jeu.strategie.reply(self)
             self.pause -= 1
             return
         elif(self.pause > 0):
-            if(self.chemin[-1][0] in Jeu.positions.values()):
-                Jeu.positions[self.nom] = self.position
+            if(self.isObstacle(self.chemin[0])):
                 print("joueur {0}: passe mon tour".format(self.nom))
                 self.pause += 1
                 return
             print(self.nom, "reprend mon chemin")
             self.pause = 0
-            row, col = self.chemin[-1][0]
+            row, col = self.chemin[0]
         else:
             Jeu.caches["l1"][self.nom].append(self.position)
-            row, col = self.chemin[-1][0]
+            row, col = self.chemin[0]
         self.player.set_rowcol(row, col)
         self.position = (row, col)
-        if(len(self.chemin[-1]) > 0):
-            self.chemin[-1].pop(0)
+        if(len(self.chemin) > 0):
+            self.chemin.pop(0)
         Jeu.positions[self.nom] = self.position
         # print("pos :", self.nom, self.position)
         self.game.mainiteration()
