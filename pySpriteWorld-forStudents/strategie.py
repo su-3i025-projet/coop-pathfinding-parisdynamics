@@ -53,8 +53,6 @@ class OppoStrategie(Strategie):
                 if(not(currentJ is Jeu) and currentJ.position == case):
                     currentJ.freeze(3)
 
-
-
 class CoopStrategie(Strategie):
     def __init__(self):
         super().__init__("Cooperative")
@@ -93,21 +91,26 @@ class AdvancedCoopStrategie(Strategie):
 
     def apply(self, Jeu):
         t = Jeu.clock
-        self.garbage(t)
+        ecart = 0
+        #self.garbage(t)
         print("\n\n\nresa", self.reservation)
+        length = len(Jeu.chemin)
+        #on modifie le chemin en fonction des conflits rencontres
+        for i in range(length):
+            if(t+i in self.reservation.keys()):
+                if(Jeu.chemin[i+ecart] in self.reservation[t+i]):
+                    print("conflit a t =", t+i)
+                    y = 1;
+                    while(t+i+y in self.reservation.keys() and Jeu.chemin[i+ecart-y] in self.reservation[t+i+y]):
+                        y += 1
+                    print("y:", y)
+                    for inter in range(y+3):
+                        Jeu.chemin.insert(i-ecart-y, Jeu.chemin[i-ecart-y])
+                    ecart += y
+        #on effectue la reservation
         for i in range(len(Jeu.chemin)):
             if(t+i in self.reservation.keys()):
-                if(Jeu.chemin[i] in self.reservation[t+i]):
-                    if(i == 0):
-                        print("conflit debut")
-                        Jeu.chemin.insert(0, Jeu.position)
-                    else:
-                        print("conflit a t =", t+i)
-                        Jeu.chemin.insert(i, Jeu.chemin[i-1])
-                    self.reservation[t+i].append(Jeu.chemin[i])
-                    t += 1
-                else:
-                    self.reservation[t+i].append(Jeu.chemin[i])
+                self.reservation[t+i].append(Jeu.chemin[i])
             else:
                 self.reservation[t+i] = [Jeu.chemin[i]]
         print("resa", self.reservation)

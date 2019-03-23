@@ -31,7 +31,6 @@ class Jeu():
         self.cost_so_far = {}
         self.came_from[init] = None
         self.cost_so_far[init] = 0
-        self.pause = 0
         self.priority = 0
         self.avoid = []
         self.ID = Jeu.cpt
@@ -116,23 +115,10 @@ class Jeu():
             return
         if(self.isObstacle(self.chemin[0]) and self.pause <= 0):
             print("joueur {0}: conflit avec un autre joueur".format(self.nom))
-            self.pause += 1
-            return
-        elif(self.pause > 1):
             Jeu.strategie.reply(self)
-            self.pause -= 1
             return
-        elif(self.pause > 0):
-            if(self.isObstacle(self.chemin[0])):
-                print("joueur {0}: passe mon tour".format(self.nom))
-                self.pause += 1
-                return
-            print(self.nom, "reprend mon chemin")
-            self.pause = 0
-            row, col = self.chemin[0]
-        else:
-            Jeu.caches["l1"][self.nom].append(self.position)
-            row, col = self.chemin[0]
+        Jeu.caches["l1"][self.nom].append(self.position)
+        row, col = self.chemin[0]
         self.player.set_rowcol(row, col)
         self.position = (row, col)
         if(len(self.chemin) > 0):
