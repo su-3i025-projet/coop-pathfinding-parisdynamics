@@ -15,7 +15,7 @@ class Jeu():
     caches["l2"] = {}
     references = {}
     clock = 0
-    strategie = AdvancedCoopStrategie()
+    strategie = CacheStrategie()
 
     def __init__(self, game, player, nom, init, goal, wallStates, goalStates):
         self.game = game
@@ -23,7 +23,7 @@ class Jeu():
         self.nom = nom
         self.position = init
         self.goal = goal
-        self.graph = Graph((wallStates, goalStates))
+        self.graph = Graph((wallStates, goalStates), game.spriteBuilder.rowsize, game.spriteBuilder.colsize)
         self.chemin = []
         self.frontier = PriorityQueue()
         self.frontier.put(init, 0)
@@ -76,6 +76,12 @@ class Jeu():
         Jeu.caches["l2"][self.nom] = self.caches["l1"][self.nom]
         Jeu.caches["l1"][self.nom] = []
 
+    def done(self):
+        for i in Jeu.references.values():
+            if(i.goal != (-1, -1)):
+                return False
+        return True
+
     def heuristic(self,a, b):
         xa, ya = a
         xb, yb = b
@@ -113,7 +119,7 @@ class Jeu():
             # print("joueur {0}: RIEN A CHERCHER".format(self.nom))
             Jeu.positions[self.nom] = self.position
             return
-        if(self.isObstacle(self.chemin[0]) and self.pause <= 0):
+        if(self.isObstacle(self.chemin[0])):
             print("joueur {0}: conflit avec un autre joueur".format(self.nom))
             Jeu.strategie.reply(self)
             return
@@ -124,5 +130,5 @@ class Jeu():
         if(len(self.chemin) > 0):
             self.chemin.pop(0)
         Jeu.positions[self.nom] = self.position
-        # print("pos :", self.nom, self.position)
+        #print("pos :", self.nom, self.position)
         self.game.mainiteration()

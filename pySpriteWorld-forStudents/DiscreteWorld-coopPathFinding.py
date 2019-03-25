@@ -27,7 +27,7 @@ game = Game()
 def init(_boardname=None):
     global player,game
     # pathfindingWorld_MultiPlayer4
-    name = _boardname if _boardname is not None else 'pathfindingWorld_MultiPlayer'
+    name = _boardname if _boardname is not None else 'pathfindingWorld_MultiPlayer11'
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
@@ -78,6 +78,7 @@ def main():
     # en essayant de faire correspondre les couleurs pour que ce soit plus simple à suivre
     posPlayers = initStates
 
+    temoin = False
     jeux = []
     z=0
     for i in range(len(goalStates)):
@@ -93,6 +94,8 @@ def main():
     #-------------------------------
 
     for i in range(iterations):
+        if(temoin):
+            break
         for jeu in jeux:
             jeu.move()
             # si on a  trouvé un objet on le ramasse
@@ -105,17 +108,19 @@ def main():
 
 
                 # et on remet un même objet à un autre endroit
+
                 x = random.randint(1,19)
                 y = random.randint(1,19)
                 while (x,y) in wallStates:
                     x = random.randint(1,19)
                     y = random.randint(1,19)
-                o.set_rowcol(x,y)
-                goalStates.append((x,y)) # on ajoute ce nouveau goalState
+                #o.set_rowcol(x,y)
+                #goalStates.append((x,y)) # on ajoute ce nouveau goalState
                 game.layers['ramassable'].add(o)
-                jeu.goal = (x, y)
+                jeu.goal = (-1, -1)
                 jeu.reset()
                 jeu.play()
+                temoin = jeu.done()
                 game.mainiteration()
 
                 break

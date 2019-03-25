@@ -26,13 +26,20 @@ class CacheStrategie(Strategie):
         pass
 
     def reply(self, Jeu):
+        case = Jeu.chemin[0]
         for currentJ in Jeu.references.values():
-            if(len(currentJ.chemin) > 0 and len(currentJ.chemin) > 0):
-                if(currentJ.chemin[0] is Jeu.chemin[0]):
-                    currentJ.chemin.insert(0, currentJ.position)
-                    if(len(Jeu.caches["l1"][currentJ.nom]) > 0):
-                        currentJ.chemin.insert(0, Jeu.caches["l1"][currentJ.nom][-1])
-                        Jeu.caches["l1"][currentJ.nom].pop(-1)
+            if(not(currentJ is Jeu) and currentJ.position == case and currentJ.ID < Jeu.ID):
+                return
+        if(len(Jeu.caches["l1"][Jeu.nom]) <= 0 and len(Jeu.caches["l2"][Jeu.nom]) > 0):
+            Jeu.caches["l1"][Jeu.nom] = Jeu.caches["l2"][Jeu.nom]
+            Jeu.caches["l2"][Jeu.nom] = []
+        if(len(Jeu.caches["l1"][Jeu.nom]) > 0):
+            Jeu.chemin.insert(0, Jeu.position)
+            Jeu.chemin.insert(0, Jeu.caches["l1"][Jeu.nom][-1])
+            Jeu.caches["l1"][Jeu.nom].pop(-1)
+        else:
+            print("impossible finir chemin")
+            return
 
 class OppoStrategie(Strategie):
     def __init__(self):
@@ -91,32 +98,55 @@ class AdvancedCoopStrategie(Strategie):
 
     def apply(self, Jeu):
         t = Jeu.clock
-        ecart = 0
         #self.garbage(t)
         print("\n\n\nresa", self.reservation)
-        length = len(Jeu.chemin)
-        #on modifie le chemin en fonction des conflits rencontres
-        for i in range(length):
-            if(t+i in self.reservation.keys()):
-                if(Jeu.chemin[i+ecart] in self.reservation[t+i]):
-                    print("conflit a t =", t+i)
-                    y = 1;
-                    while(t+i+y in self.reservation.keys() and Jeu.chemin[i+ecart-y] in self.reservation[t+i+y]):
-                        y += 1
-                    print("y:", y)
-                    for inter in range(y+3):
-                        Jeu.chemin.insert(i-ecart-y, Jeu.chemin[i-ecart-y])
-                    ecart += y
+        while(not self.arrangementLineaire(Jeu, t)):
+            print("arrangement")
         #on effectue la reservation
         for i in range(len(Jeu.chemin)):
             if(t+i in self.reservation.keys()):
-                self.reservation[t+i].append(Jeu.chemin[i])
+                self.reservation[t+i][Jeu.chemin[i]] = Jeu.nom
             else:
-                self.reservation[t+i] = [Jeu.chemin[i]]
+                self.reservation[t+i] = {Jeu.chemin[i]:Jeu.nom}
         print("resa", self.reservation)
 
     def reply(self, Jeu):
-        exit(0)
+        pass
+
+    def arrangementLineaire(self, Jeu, t):
+        #on modifie le chemin en fonction des conflits rencontres
+        temoin = True
+        ecart = 0
+        length = len(Jeu.chemin)
+        for i in range(length):
+            if(t+i in self.reservation.keys()):
+                if(Jeu.chemin[i+ecart] in self.reservation[t+i].keys()):
+                    print("conflit a t =", t+i)
+                    y = 1;
+                    while(t+i+y in self.reservation.keys() and Jeu.chemin[i+ecart-y] in self.reservation[t+i+y].keys()):
+                        y += 1
+                    print("y:", y)
+                    for inter in range(y):
+                        Jeu.chemin.insert(i-ecart-y, Jeu.chemin[i-ecart-y])
+                    ecart += y
+        #on regle les derniers conflits
+        return self.arrangementFace2Face(Jeu, t)
+
+    def arrangementFace2Face(self, Jeu, t):
+        for i in range(len(Jeu.chemin)):
+            if(t+i-1 in self.reservation.keys() and Jeu.chemin[i] in self.reservation[t+i-1].keys() and Jeu.nom != self.reservation[t+i-1][Jeu.chemin[i]]):
+                print(Jeu.chemin[i])
+                print(Jeu.nom)
+                print(self.reservation[t+i-1][Jeu.chemin[i]])
+                print(Jeu.chemin)
+                print("t=",t+i)
+                if(i <= 2):
+                    print("impossible de finir le chemin")
+                    return True
+                print("je rajoute", Jeu.chemin[i-2])
+                Jeu.chemin.insert(i-1, Jeu.chemin[i-2])
+                return False
+        return True
 
     def garbage(self, t):
         collector = []
